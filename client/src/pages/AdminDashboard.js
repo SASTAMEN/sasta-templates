@@ -73,6 +73,8 @@ const AdminDashboard = () => {
   const [components, setComponents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingComponent, setEditingComponent] = useState(null);
+  const [showDeletedComponents, setShowDeletedComponents] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     category: 'navbar',
@@ -83,23 +85,23 @@ const AdminDashboard = () => {
     preview: ''
   });
 
+  // Move fetchComponents to top level
+  const fetchComponents = async () => {
+    try {
+      const response = await componentsAPI.getAll();
+      setComponents(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching components:', error);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!user) {
       navigate('/admin/login');
       return;
     }
-
-    const fetchComponents = async () => {
-      try {
-        const response = await componentsAPI.getAll();
-        setComponents(response.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching components:', error);
-        setLoading(false);
-      }
-    };
-
     fetchComponents();
   }, [user, navigate]);
 
@@ -130,45 +132,32 @@ const AdminDashboard = () => {
     e.preventDefault();
     try {
       const tagsArray = formData.tags.split(',').map(tag => tag.trim());
-      
-      // Format the component code
       let formattedCode = formData.code.trim();
-      
-      // If it's a full component file, extract just the component function
       if (formattedCode.includes('export default')) {
-        const match = formattedCode.match(/const\s+(\w+)\s*=\s*\(\)\s*=>\s*{([^}]*)}/s);
+        const match = formattedCode.match(/const\s+(\w+)\s*=\s*\(\)\s*=>\s*{([\s\S]*)}/);
         if (match) {
-          formattedCode = `() => ${match[2]}`;
+          formattedCode = `() => {${match[2]}}`;
         }
       }
-
-      // Generate preview from the component code
       let preview = formattedCode;
-      
-      // Extract the JSX part from the component code
-      const jsxMatch = preview.match(/return\s*\(([^)]*)\)/s);
+      const jsxMatch = formattedCode.match(/return\s*\((.*?)\);/s);
       if (jsxMatch) {
-        preview = jsxMatch[1].trim();
+        preview = jsxMatch[1];
       }
-      
-      // Convert React attributes to HTML attributes
-      preview = preview
-        .replace(/className/g, 'class')
-        .replace(/{([^}]*)}/g, '$1') // Remove JSX expressions
-        .replace(/\/>/g, '>') // Fix self-closing tags
-        .trim();
-
       const componentData = {
         ...formData,
         code: formattedCode,
-        tags: tagsArray,
-        preview: preview
+        preview,
+        tags: tagsArray
       };
-
-      await componentsAPI.create(componentData);
-      const response = await componentsAPI.getAll();
-      setComponents(response.data);
+      if (editingComponent) {
+        await componentsAPI.update(editingComponent._id, componentData);
+      } else {
+        await componentsAPI.create(componentData);
+      }
       setShowAddForm(false);
+      setEditingComponent(null);
+      await fetchComponents();
       setFormData({
         name: '',
         category: 'navbar',
@@ -179,19 +168,52 @@ const AdminDashboard = () => {
         preview: ''
       });
     } catch (error) {
-      console.error('Error adding component:', error);
+      console.error('Error saving component:', error);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this component?')) {
+  const handleHardDelete = async (id) => {
+    if (window.confirm('This will permanently delete the component. Are you sure?')) {
       try {
-        await componentsAPI.delete(id);
-        setComponents(components.filter(comp => comp._id !== id));
+        await componentsAPI.hardDelete(id);
+        await fetchComponents();
       } catch (error) {
-        console.error('Error deleting component:', error);
+        console.error('Error permanently deleting component:', error);
       }
     }
+  };
+
+  const handleRestore = async (id) => {
+    try {
+      await componentsAPI.restore(id);
+      await fetchComponents();
+    } catch (error) {
+      console.error('Error restoring component:', error);
+    }
+  };
+
+  // Add handleSoftDelete function
+  const handleSoftDelete = async (id) => {
+    try {
+      await componentsAPI.softDelete(id);
+      await fetchComponents();
+    } catch (error) {
+      console.error('Error soft deleting component:', error);
+    }
+  };
+
+  const handleEdit = (component) => {
+    setEditingComponent(component);
+    setFormData({
+      name: component.name,
+      category: component.category,
+      description: component.description,
+      code: component.code,
+      styles: component.styles,
+      tags: component.tags.join(', '),
+      preview: component.preview
+    });
+    setShowAddForm(true);
   };
 
   if (loading) {
@@ -201,8 +223,21 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-bold text-gray-900">Component Library</h1>
+            <div className="flex items-center">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showDeletedComponents}
+                  onChange={(e) => setShowDeletedComponents(e.target.checked)}
+                  className="form-checkbox h-5 w-5 text-indigo-600"
+                />
+                <span className="ml-2 text-gray-700">Show Deleted</span>
+              </label>
+            </div>
+          </div>
           <button
             onClick={() => setShowAddForm(true)}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
@@ -349,7 +384,7 @@ const AdminDashboard = () => {
                       type="submit"
                       className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                     >
-                      Add Component
+                      {editingComponent ? 'Update Component' : 'Add Component'}
                     </button>
                   </div>
                 </div>
@@ -359,7 +394,9 @@ const AdminDashboard = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {components.map((component) => (
+          {components
+            .filter(component => showDeletedComponents ? component.deleted : !component.deleted)
+            .map((component) => (
             <div
               key={component._id}
               className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
@@ -370,14 +407,49 @@ const AdminDashboard = () => {
                     <h2 className="text-xl font-semibold text-gray-900">{component.name}</h2>
                     <p className="text-gray-600 mt-1">{component.description}</p>
                   </div>
-                  <button
-                    onClick={() => handleDelete(component._id)}
-                    className="text-red-500 hover:text-red-700 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleEdit(component)}
+                      className="text-blue-500 hover:text-blue-700 transition-colors"
+                      title="Edit"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    {!component.deleted ? (
+                      <button
+                        onClick={() => handleSoftDelete(component._id)}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                        title="Soft Delete"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleRestore(component._id)}
+                          className="text-green-500 hover:text-green-700 transition-colors"
+                          title="Restore"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleHardDelete(component._id)}
+                          className="text-red-600 hover:text-red-800 transition-colors"
+                          title="Permanently Delete"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {component.tags.map((tag) => (

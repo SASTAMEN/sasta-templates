@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { componentsAPI } from '../services/api';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import LiveComponentPreview from '../components/LiveComponentPreview';
+import CodePlayground from '../components/CodePlayground';
 
 const ComponentDetail = () => {
   const { id } = useParams();
@@ -12,23 +12,40 @@ const ComponentDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('preview');
+  const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    const fetchComponent = async () => {
-      try {
-        const response = await componentsAPI.getById(id);
-        setComponent(response.data);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching component:', err);
-        setError('Failed to load component');
-        setLoading(false);
-      }
-    };
+  // Move fetchComponent to top-level so it can be reused
+  const fetchComponent = async () => {
+    try {
+      const response = await componentsAPI.getById(id);
+      setComponent(response.data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching component:', err);
+      setError('Failed to load component');
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchComponent();
   }, [id]);
+
+  const handleSave = async ({ code, styles }) => {
+    try {
+      await componentsAPI.update(id, {
+        ...component,
+        code,
+        styles
+      });
+      // Refresh the component data
+      await fetchComponent();
+    } catch (err) {
+      console.error('Error saving component:', err);
+      setError('Failed to save changes');
+    }
+  };
 
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this component?')) {
@@ -73,9 +90,12 @@ const ComponentDetail = () => {
             </div>
 
             <div className="border-b border-gray-200 mb-6">
-              <nav className="-mb-px flex space-x-8">
+              <nav className="-mb-px flex space-x-6">
                 <button
-                  onClick={() => setActiveTab('preview')}
+                  onClick={() => {
+                    setActiveTab('preview');
+                    setIsEditing(false);
+                  }}
                   className={`${
                     activeTab === 'preview'
                       ? 'border-indigo-500 text-indigo-600'
@@ -85,6 +105,19 @@ const ComponentDetail = () => {
                   Preview
                 </button>
                 <button
+                  onClick={() => {
+                    setActiveTab('preview');
+                    setIsEditing(true);
+                  }}
+                  className={`${
+                    isEditing && activeTab === 'preview'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                >
+                  Edit Live
+                </button>
+                <button
                   onClick={() => setActiveTab('code')}
                   className={`${
                     activeTab === 'code'
@@ -92,15 +125,17 @@ const ComponentDetail = () => {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
                 >
-                  Code
+                  View Code
                 </button>
               </nav>
             </div>
 
             {activeTab === 'preview' ? (
-              <LiveComponentPreview 
+              <CodePlayground 
                 code={component.code}
                 styles={component.styles}
+                isEditMode={isEditing}
+                onSave={handleSave}
               />
             ) : (
               <div className="space-y-6">

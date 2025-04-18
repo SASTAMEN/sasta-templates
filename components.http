@@ -1,0 +1,54 @@
+### Variables
+@baseUrl = http://localhost:5000/components
+@authToken = YOUR_AUTH_TOKEN_HERE
+
+### Login to get token (adjust the endpoint as per your auth system)
+# POST http://localhost:5000/auth/login
+# Content-Type: application/json
+
+# {
+#     "email": "admin@example.com",
+#     "password": "your_password"
+# }
+
+### Add Modern Navbar
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "Modern Navbar with Dropdown",
+    "description": "A responsive navbar with dropdown menus and mobile toggle",
+    "category": "Navigation",
+    "code": "import React, { useState } from 'react';\n\nexport default function Navbar() {\n  const [isOpen, setIsOpen] = useState(false);\n  return (\n    <nav className=\"bg-white shadow-lg\">\n      <div className=\"max-w-7xl mx-auto px-4\">\n        <div className=\"flex justify-between h-16\">\n          <div className=\"flex items-center\">\n            <a href=\"#\" className=\"text-xl font-bold text-indigo-600\">Logo</a>\n          </div>\n          <div className=\"hidden md:flex items-center space-x-4\">\n            <a href=\"#\" className=\"px-3 py-2 text-gray-700 hover:text-indigo-600\">Home</a>\n            <a href=\"#\" className=\"px-3 py-2 text-gray-700 hover:text-indigo-600\">About</a>\n            <a href=\"#\" className=\"px-3 py-2 text-gray-700 hover:text-indigo-600\">Services</a>\n          </div>\n        </div>\n      </div>\n    </nav>\n  );\n}",
+    "preview": "https://via.placeholder.com/600x400.png/2563eb/ffffff?text=Modern-Navbar",
+    "tags": ["navbar", "navigation", "responsive", "tailwind"]
+}
+
+### Add Login Form
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "Gradient Login Form",
+    "description": "A modern login form with gradient background and social login",
+    "category": "Forms",
+    "code": "import React from 'react';\n\nexport default function LoginForm() {\n  return (\n    <div className=\"min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-500\">\n      <div className=\"bg-white p-8 rounded-xl shadow-2xl w-96 space-y-6\">\n        <h1 className=\"text-3xl font-bold text-center text-gray-800\">Welcome back</h1>\n        <div className=\"space-y-4\">\n          <div>\n            <label className=\"text-sm font-medium text-gray-700\">Email</label>\n            <input type=\"email\" className=\"mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500\" placeholder=\"you@example.com\" />\n          </div>\n          <div>\n            <label className=\"text-sm font-medium text-gray-700\">Password</label>\n            <input type=\"password\" className=\"mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500\" placeholder=\"••••••••\" />\n          </div>\n          <button className=\"w-full py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg\">Sign in</button>\n        </div>\n      </div>\n    </div>\n  );",
+    "preview": "https://via.placeholder.com/600x400.png/2563eb/ffffff?text=Login-Form",
+    "tags": ["form", "login", "gradient", "tailwind"]
+}
+
+### Add Hero Section
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "Modern Hero Section",
+    "description": "A beautiful hero section with gradient background and CTA",
+    "category": "Layout",
+    "code": "import React from 'react';\n\nexport default function HeroSection() {\n  return (\n    <div className=\"relative bg-gradient-to-br from-indigo-500 to-purple-600 h-screen flex items-center justify-center text-white\">\n      <div className=\"max-w-4xl mx-auto text-center px-4\">\n        <h1 className=\"text-5xl md:text-6xl font-bold mb-6\">Build Something Amazing</h1>\n        <p className=\"text-xl md:text-2xl mb-8 opacity-90\">Create beautiful web applications with our modern components</p>\n        <div className=\"space-x-4\">\n          <button className=\"bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200\">Get Started</button>\n          <button className=\"border-2 border-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition-all duration-200\">Learn More</button>\n        </div>\n      </div>\n    </div>\n  );",
+    "preview": "https://via.placeholder.com/600x400.png/2563eb/ffffff?text=Hero-Section",
+    "tags": ["layout", "hero", "gradient", "tailwind"]
+}

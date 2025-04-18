@@ -38,24 +38,23 @@ const Home = () => {
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {categories.map((category) => (
-          <div
+          <Link
             key={category.name}
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+            to={`/components/category/${category.name.toLowerCase()}`}
+            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow block group focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+            <h2 className="text-xl font-semibold text-gray-900 mb-3 group-hover:text-indigo-700 transition-colors">
               {category.name}
             </h2>
             <p className="text-gray-600 mb-4">{category.description}</p>
             <ul className="space-y-2">
               {category.components.map((component) => (
-                <li key={component} className="text-indigo-600 hover:text-indigo-800">
-                  <Link to={`/components/${component.toLowerCase().replace(/\s+/g, '-')}`}>
-                    {component}
-                  </Link>
+                <li key={component} className="text-indigo-600 group-hover:text-indigo-800">
+                  {component}
                 </li>
               ))}
             </ul>
-          </div>
+          </Link>
         ))}
       </section>
 

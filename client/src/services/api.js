@@ -58,12 +58,26 @@ export const componentsAPI = {
     }
     return api.put(`/components/${id}`, componentData);
   },
-  delete: (id) => {
+  softDelete: (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+    return api.patch(`/components/${id}/soft-delete`);
+  },
+  hardDelete: (id) => {
     const token = localStorage.getItem('token');
     if (!token) {
       throw new Error('Authentication required');
     }
     return api.delete(`/components/${id}`);
+  },
+  restore: (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+    return api.patch(`/components/${id}/restore`);
   }
 };
 

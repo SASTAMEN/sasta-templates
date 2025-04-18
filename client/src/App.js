@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import ComponentShowcase from './pages/ComponentShowcase';
 import ComponentDetail from './pages/ComponentDetail';
+import PlaygroundPage from './pages/PlaygroundPage';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminRegister from './pages/AdminRegister';
@@ -20,6 +21,7 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Home />} />
+              <Route path="/playground" element={<PlaygroundPage />} />
               <Route path="/components" element={<ComponentShowcase />} />
               <Route path="/components/category/:category" element={<ComponentShowcase />} />
               <Route path="/components/:id" element={<ComponentDetail />} />

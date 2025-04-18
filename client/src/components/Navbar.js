@@ -20,6 +20,9 @@ const Navbar = () => {
           </Link>
           
           <div className="flex space-x-4">
+            <Link to="/playground" className="text-indigo-600 hover:text-indigo-800 font-semibold">
+              Playground
+            </Link>
             <Link to="/components/category/navbar" className="text-gray-600 hover:text-gray-800">
               Navbars
             </Link>
